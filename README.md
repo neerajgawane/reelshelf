@@ -3,7 +3,7 @@
 A movie discovery app: sign up with WhatsApp OTP verification, sign in with email + password or phone + OTP, browse and search movies, and keep a personal shelf of saved movies.
 
 - **Live URL:** _add after deploying_
-- **Repository:** _add GitHub URL_
+- **Repository:** https://github.com/neerajgawane/reelshelf
 
 ## Architecture
 
