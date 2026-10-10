@@ -1,0 +1,66 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum OtpPurpose {
+  SIGNUP_VERIFY
+  LOGIN
+  PASSWORD_RESET
+}
+
+model User {
+  id            String         @id @default(cuid())
+  name          String
+  email         String         @unique
+  phone         String         @unique // E.164, e.g. +919876543210
+  passwordHash  String
+  phoneVerified Boolean        @default(false)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  savedMovies   SavedMovie[]
+  otpChallenges OtpChallenge[]
+}
+
+model SavedMovie {
+  id              String   @id @default(cuid())
+  userId          String
+  externalMovieId String // IMDb id, e.g. tt0111161
+  title           String
+  poster          String?
+  year            Int?
+  rating          Float?
+  createdAt       DateTime @default(now())
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, externalMovieId])
+  @@index([userId, createdAt])
+}
+
+// One row per issued code. Only an HMAC of the code is stored, never the code itself.
+model OtpChallenge {
+  id         String     @id
+  userId     String
+  purpose    OtpPurpose
+  codeHash   String
+  expiresAt  DateTime
+  attempts   Int        @default(0)
+  verifiedAt DateTime?
+  consumedAt DateTime?
+  createdAt  DateTime   @default(now())
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, purpose, createdAt])
+}
+
+// Fixed-window counters stored in Postgres so limits hold across serverless instances.
+model RateLimit {
+  key     String   @id
+  count   Int
+  resetAt DateTime
+}
